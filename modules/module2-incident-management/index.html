@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KeyInvest — Module 2: Recognising and Reporting Incidents</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f4f6f9; min-height: 100vh; padding: 1.5rem 1rem 3rem; color: #1a1a1a; }
+  :root {
+    --teal: #009B9E; --navy: #1B2A4A; --orange: #D4622B;
+    --teal-light: #E1F5EE; --navy-light: #e8ecf4;
+    --border: #dde1e8; --bg: #fff; --surface: #f4f6f9;
+    --text: #1a1a1a; --muted: #5c6270;
+    --radius: 10px; --radius-sm: 7px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .header-bar { background: var(--navy); border-radius: var(--radius); padding: 1.25rem 1.5rem; color: #fff; margin-bottom: 1.25rem; }
+  .ki-logo { font-size: 15px; font-weight: 600; color: var(--teal); margin-bottom: 0.3rem; letter-spacing: -0.3px; }
+  .header-title { font-size: 13px; color: rgba(255,255,255,0.72); }
+  .prog-wrap { background: rgba(255,255,255,0.18); border-radius: 99px; height: 5px; margin-top: 0.5rem; }
+  .prog-fill { height: 5px; border-radius: 99px; background: var(--teal); transition: width 0.4s ease; }
+
+  .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .card-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .card-body { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; letter-spacing: 0.03em; }
+  .badge-teal { background: var(--teal-light); color: var(--navy); }
+  .badge-orange { background: #fbeee8; color: var(--orange); }
+  .badge-navy { background: var(--navy-light); color: var(--navy); }
+  .badge-green { background: #eaf3de; color: #3b6d11; }
+
+  .scenario { background: var(--surface); border-left: 3px solid var(--teal); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 1rem 1.25rem; margin: 1rem 0; font-size: 14px; color: var(--text); line-height: 1.65; }
+  .scenario-label { font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+
+  .options { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+  .opt { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.8rem 1rem; font-size: 14px; color: var(--text); cursor: pointer; text-align: left; line-height: 1.5; transition: background 0.12s, border-color 0.12s; }
+  .opt:hover:not(:disabled) { background: var(--surface); border-color: #b0bad4; }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: #eaf3de; border-color: #3b6d11; color: #27500a; }
+  .opt.wrong { background: #fcebeb; border-color: #a32d2d; color: #791f1f; }
+
+  .feedback { border-radius: var(--radius-sm); padding: 0.9rem 1.1rem; margin-top: 0.8rem; font-size: 14px; line-height: 1.65; display: none; }
+  .feedback.show { display: block; }
+  .fb-correct { background: #eaf3de; color: #27500a; border: 1px solid #639922; }
+  .fb-wrong { background: #fcebeb; color: #791f1f; border: 1px solid #a32d2d; }
+  .fb-head { font-weight: 700; margin-bottom: 0.25rem; }
+
+  .nav { display: flex; gap: 0.75rem; margin-top: 1.25rem; justify-content: space-between; align-items: center; }
+  .btn-primary { background: var(--navy); color: #fff; border: none; border-radius: var(--radius-sm); padding: 0.7rem 1.5rem; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.87; }
+  .btn-primary:disabled { opacity: 0.38; cursor: default; }
+  .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.7rem 1.25rem; font-size: 14px; cursor: pointer; }
+  .btn-outline:hover { background: var(--surface); }
+
+  .sec-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+  .sec-num { width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .sec-title { font-size: 17px; font-weight: 600; color: var(--text); }
+
+  ul.kl { list-style: none; padding: 0; margin: 0.75rem 0 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  ul.kl li { font-size: 14px; color: var(--muted); padding-left: 1.1rem; position: relative; line-height: 1.55; }
+  ul.kl li::before { content: ''; position: absolute; left: 0; top: 0.58em; width: 5px; height: 5px; border-radius: 50%; background: var(--teal); }
+
+  .chk { display: flex; flex-direction: column; gap: 0.6rem; margin: 0.75rem 0 0; }
+  .chk-row { display: flex; align-items: flex-start; gap: 0.75rem; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .chk-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--teal-light); color: var(--teal); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+
+  .intro-hero { background: var(--navy); border-radius: var(--radius); padding: 2rem 1.5rem; color: #fff; margin-bottom: 1.25rem; text-align: center; }
+  .intro-hero h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+  .intro-hero p { font-size: 14px; color: rgba(255,255,255,0.72); line-height: 1.65; }
+  .tags { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
+  .tag { background: rgba(255,255,255,0.13); color: rgba(255,255,255,0.85); font-size: 12px; padding: 4px 12px; border-radius: 99px; }
+
+  .score-ring { width: 96px; height: 96px; border-radius: 50%; border: 5px solid var(--teal); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+  .score-big { font-size: 26px; font-weight: 700; color: var(--text); }
+  .score-sub { font-size: 11px; color: var(--muted); }
+
+  .completion-form { border-radius: var(--radius); border: 1px solid #5dcaa5; background: var(--teal-light); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .completion-form h3 { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 0.75rem; }
+  .form-row { margin-bottom: 0.75rem; }
+  .form-row label { display: block; font-size: 12px; font-weight: 600; color: var(--navy); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-row input { width: 100%; border: 1px solid #9fe1cb; border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; font-size: 14px; background: #fff; color: var(--text); }
+  .form-row input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+  .check-row-consent { display: flex; gap: 0.6rem; align-items: flex-start; margin-top: 0.5rem; font-size: 13px; color: #085041; line-height: 1.5; }
+  .check-row-consent input[type=checkbox] { margin-top: 2px; flex-shrink: 0; width: 15px; height: 15px; accent-color: var(--teal); }
+  .btn-submit { background: var(--teal); color: #fff; border: none; border-radius: var(--radius-sm); padding: 0.7rem 1.5rem; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 0.75rem; transition: opacity 0.15s; }
+  .btn-submit:hover { opacity: 0.87; }
+  .btn-submit:disabled { opacity: 0.4; cursor: default; }
+
+  .completion-confirmed { border-radius: var(--radius); border: 1px solid #5dcaa5; background: var(--teal-light); padding: 1.25rem 1.5rem; margin-bottom: 1rem; display: none; }
+  .completion-confirmed h3 { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 0.4rem; }
+  .completion-confirmed p { font-size: 13px; color: #085041; line-height: 1.55; }
+  .ref-code { font-family: monospace; font-size: 13px; background: rgba(0,155,158,0.12); padding: 3px 8px; border-radius: 4px; color: var(--navy); font-weight: 700; }
+
+  .orange-card { border-left: 3px solid var(--orange); border-radius: 0 var(--radius) var(--radius) 0; }
+  hr.div { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+  /* Incident types visual */
+  .types { display: flex; flex-direction: column; gap: 4px; margin: 1rem 0 0.5rem; }
+  .type-row { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.7rem 0.9rem; border-radius: var(--radius-sm); font-size: 13px; color: var(--text); line-height: 1.5; }
+  .type-row strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+  .t-1 { background: #fbeee8; border-left: 3px solid var(--orange); }
+  .t-2 { background: var(--teal-light); border-left: 3px solid var(--teal); }
+  .t-3 { background: var(--navy-light); border-left: 3px solid var(--navy); }
+
+  /* Timeline */
+  .timeline { display: flex; flex-direction: column; gap: 0; margin-top: 0.75rem; }
+  .tl-row { display: flex; gap: 0.9rem; padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
+  .tl-row:last-child { border-bottom: none; }
+  .tl-clock { font-family: monospace; font-size: 12px; font-weight: 700; color: var(--orange); flex-shrink: 0; width: 70px; padding-top: 2px; }
+  .tl-body { font-size: 13px; color: var(--muted); line-height: 1.55; flex: 1; }
+  .tl-body strong { color: var(--text); }
+
+  /* Role comparison table */
+  .roles { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .roles-head { padding: 0.55rem 0.8rem; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .roles-head.line1 { background: var(--teal-light); color: var(--navy); border-right: 1px solid var(--border); }
+  .roles-head.line2 { background: var(--navy-light); color: var(--navy); }
+  .roles-cell { padding: 0.55rem 0.8rem; font-size: 13px; color: var(--text); line-height: 1.5; border-top: 1px solid var(--border); }
+  .roles-cell.line1 { background: #f1faf6; border-right: 1px solid var(--border); }
+  .roles-cell.line2 { background: #f4f6fa; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- INTRO -->
+<div id="s-intro" class="screen active">
+  <div class="intro-hero">
+    <div class="ki-logo">KeyInvest</div>
+    <h1>Module 2: Recognising and Reporting Incidents</h1>
+    <p>Something has just gone wrong — or you suspect it has. What you do in the next 24 hours determines whether it gets resolved or becomes a regulatory problem. This module covers how to recognise an Incident, what to do immediately, and how the reporting clock works.</p>
+    <div class="tags">
+      <span class="tag">All staff</span>
+      <span class="tag">~10 minutes</span>
+      <span class="tag">CPS 220 / 230 / 234</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">What you will learn</div>
+    <ul class="kl">
+      <li>What counts as an Incident at KeyInvest — and what doesn't.</li>
+      <li>The three Incident Types: Information Security, Operational Risk, and Compliance.</li>
+      <li>The 24-hour reporting clock and what triggers it.</li>
+      <li>What to do in the first hour after you spot something.</li>
+      <li>How regulatory notification works — and why your speed matters for APRA's deadlines.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <span class="badge badge-navy" style="margin-bottom:0.6rem;">Policy anchoring</span>
+    <div class="card-body">This module is based on the following KeyInvest documents, which define how Incidents must be identified, reported, escalated, and managed:</div>
+    <ul class="kl">
+      <li><strong>Incident Management Policy</strong> — what counts as an Incident, the three Incident Types, and accountabilities.</li>
+      <li><strong>Incident Management Procedure</strong> — the step-by-step operational requirements for reporting and managing Incidents.</li>
+      <li><strong>Enterprise-wide Risk Management Strategy (ERMS)</strong> — Board-approved June 2025, the lead document of the risk framework.</li>
+      <li><strong>Key Notifications Matrix</strong> — the regulatory notification triggers and timeframes within the Incident Management Policy.</li>
+    </ul>
+    <div class="card-body" style="margin-top:0.6rem;">All documents are available on the KeyInvest Policy SharePoint site. The Incident Management Policy applies to <strong>all staff and all activities</strong> — not just Risk &amp; Compliance, and not just incidents in your own area.</div>
+  </div>
+  <div class="card orange-card">
+    <span class="badge badge-orange" style="margin-bottom:0.6rem;">When you see something — the four steps</span>
+    <div class="chk" style="margin-top:0.5rem;">
+      <div class="chk-row"><div class="chk-dot" style="background:#fbeee8;color:var(--orange);">1</div><div><strong>Assume it is an Incident.</strong> Even if you're unsure. Even if "nothing happened." The framework will sort the rest.</div></div>
+      <div class="chk-row"><div class="chk-dot" style="background:#fbeee8;color:var(--orange);">2</div><div><strong>Escalate immediately.</strong> To your manager, or directly to Risk &amp; Compliance if your manager is unreachable.</div></div>
+      <div class="chk-row"><div class="chk-dot" style="background:#fbeee8;color:var(--orange);">3</div><div><strong>Log it in Drova within required policy timeframes.</strong> If you don't know how to log in Drova, escalate and ask — don't delay reporting because of the system.</div></div>
+      <div class="chk-row"><div class="chk-dot" style="background:#fbeee8;color:var(--orange);">4</div><div><strong>Let the framework decide the rest.</strong> Classification, severity rating, regulatory reportability — all of that is Risk &amp; Compliance's job. Your job is to raise it.</div></div>
+    </div>
+  </div>
+  <div class="nav" style="justify-content:flex-end;">
+    <button class="btn-primary" onclick="goTo('s-foundation')">Start module</button>
+  </div>
+</div>
+
+<!-- FOUNDATION -->
+<div id="s-foundation" class="screen">
+  <div class="header-bar">
+    <div class="ki-logo">KeyInvest</div>
+    <div class="header-title">Section 1 of 4 — What is an Incident?</div>
+    <div class="prog-wrap"><div class="prog-fill" style="width:10%"></div></div>
+  </div>
+  <div class="sec-head"><div class="sec-num">1</div><div class="sec-title">Defining an Incident</div></div>
+  <div class="card">
+    <div class="card-body">An <strong>Incident</strong> is any unplanned event that disrupts, or has the potential to disrupt, our operations, compromises information security, or breaches a regulatory or contractual obligation. It includes near-misses — events that <em>could</em> have caused harm but didn't, by luck or quick action. A near-miss is still an Incident.</div>
+    <div class="card-body" style="margin-top:0.6rem;">An Incident does <em>not</em> have to result in financial loss or a confirmed compliance breach to count. If something unplanned has happened that touches our processes, people, systems, or obligations — it is an Incident.</div>
+  </div>
+  <div class="card">
+    <span class="badge badge-teal" style="margin-bottom:0.75rem;">The three Incident Types</span>
+    <div class="types">
+      <div class="type-row t-1"><div><strong>Information Security Incident</strong>Any event that compromises (or attempts to compromise) the confidentiality, integrity, or availability of our information. Includes data breaches, malware or ransomware, unauthorised access, phishing.</div></div>
+      <div class="type-row t-2"><div><strong>Operational Risk Incident</strong>Any failure in people, processes, or systems that disrupts a critical operation — or events arising from outside the business. Includes internal and external fraud and any unintentional financial loss or gain.</div></div>
+      <div class="type-row t-3"><div><strong>Compliance Incident</strong>An act or omission that breaches — or might breach — a legal, regulatory, or internal policy requirement. Includes APRA standards, AUSTRAC AML/CTF obligations, privacy laws.</div></div>
+    </div>
+    <div class="card-body" style="margin-top:0.75rem;">Don't worry about getting the category right on first sight. <strong>Raise it, and Line 2 will help classify.</strong> The mistake to avoid is not raising it because you weren't sure which box it belonged in.</div>
+  </div>
+  <div class="card orange-card">
+    <span class="badge badge-orange" style="margin-bottom:0.5rem;">The 24-hour expectation</span>
+    <div class="card-body">All Incidents must be logged in Drova <strong>promptly and within required policy timeframes — typically within 24 hours of discovery</strong>. Escalation to your manager (or directly to Risk &amp; Compliance if your manager is unavailable) must happen as soon as practicable. This is not a "next week" item.</div>
+  </div>
+  <div class="card">
+    <span class="badge badge-teal" style="margin-bottom:0.6rem;">Your role vs the framework's role</span>
+    <div class="card-body">A common reason staff hesitate is uncertainty — "what if I get the category wrong, the severity wrong, or escalate something that turns out to be nothing?" That hesitation is the risk. Here is the division of work:</div>
+    <div class="roles">
+      <div class="roles-head line1">Your role — Line 1</div>
+      <div class="roles-head line2">Framework — Line 2 / CRO</div>
+      <div class="roles-cell line1">Identify when something has happened</div>
+      <div class="roles-cell line2">Classify the Incident Type</div>
+      <div class="roles-cell line1">Escalate immediately</div>
+      <div class="roles-cell line2">Assess severity and impact</div>
+      <div class="roles-cell line1">Log it in Drova</div>
+      <div class="roles-cell line2">Determine regulatory reportability</div>
+      <div class="roles-cell line1">Preserve evidence</div>
+      <div class="roles-cell line2">Notify regulators where required</div>
+    </div>
+    <div class="card-body" style="margin-top:0.75rem;">If you stay in your column, you cannot get this wrong. <strong>The biggest single failure mode in Incident management is staff trying to do the framework's job for it — assessing, classifying, deciding it's not serious enough — instead of raising it.</strong></div>
+    <div class="card-body" style="margin-top:0.6rem;font-style:italic;">Do not delay escalation or logging while deciding whether something meets the definition of an Incident. If in doubt, raise it.</div>
+  </div>
+  <div class="nav">
+    <button class="btn-outline" onclick="goTo('s-intro')">Back</button>
+    <button class="btn-primary" onclick="goTo('s-q1')">Continue</button>
+  </div>
+</div>
+
+<!-- Q1 - SPOT THE INCIDENT -->
+<div id="s-q1" class="screen">
+  <div class="header-bar">
+    <div class="ki-logo">KeyInvest</div>
+    <div class="header-title">Section 2 of 4 — Spotting an Incident</div>
+    <div class="prog-wrap"><div class="prog-fill" style="width:30%"></div></div>
+  </div>
+  <div class="sec-head"><div class="sec-num">2</div><div class="sec-title">Scenario: the near-miss</div></div>
+  <div class="scenario">
+    <div class="scenario-label">Operations — Wednesday morning</div>
+    A bulk payment file was loaded into the system overnight with an extra zero on one line — a member who should have received $1,200 was queued for $12,000. The error was caught by a colleague during the morning review check, before the payment ran. The file was corrected and the payment went out at the right amount. <em>"No harm done,"</em> says the colleague. <em>"The control worked."</em>
+  </div>
+  <div class="card">
+    <div class="card-title">Is this an Incident?</div>
+    <div class="card-body" style="margin-bottom:0.5rem;">Select the best response.</div>
+    <div class="options" id="q1-opts">
+      <button class="opt" onclick="answer('q1',0,false)">No — nothing went wrong. The control worked and the payment was correct.</button>
+      <button class="opt" onclick="answer('q1',1,false)">No — the error was internal and never reached the member, so there is nothing to report.</button>
+      <button class="opt" onclick="answer('q1',2,true)">Yes — this is a near-miss Operational Risk Incident. Log it in Drova within 24 hours so the upstream cause can be investigated.</button>
+      <button class="opt" onclick="answer('q1',3,false)">Only if the error happens again — one-off mistakes don't need to be logged.</button>
+    </div>
+    <div class="feedback" id="q1-fb"><div class="fb-head" id="q1-fh"></div><div id="q1-ft"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Near-misses matter — sometimes more than incidents that cause harm</div>
+    <ul class="kl">
+      <li>A near-miss is still an unplanned event with the potential to disrupt operations. That's the definition of an Incident.</li>
+      <li>The detective control worked this time. But why did the error reach the file? That root cause is the real risk.</li>
+      <li>If we only log Incidents that cause harm, we never learn from the ones that nearly did.</li>
+      <li>Logging a near-miss is not about blame — it's about understanding the upstream cause before it happens again with worse luck.</li>
+      <li>If an Incident is rated Medium or higher, a Root Cause Analysis is mandatory, and remediation must be tracked as an Issue through the Issue Management Framework — covered in Module 3.</li>
+    </ul>
+  </div>
+  <div class="nav">
+    <button class="btn-outline" onclick="goTo('s-foundation')">Back</button>
+    <button class="btn-primary" id="q1-next" onclick="goTo('s-q2')" disabled>Continue</button>
+  </div>
+</div>
+
+<!-- Q2 - INCIDENT TYPE -->
+<div id="s-q2" class="screen">
+  <div class="header-bar">
+    <div class="ki-logo">KeyInvest</div>
+    <div class="header-title">Section 2 of 4 — Knowing what type</div>
+    <div class="prog-wrap"><div class="prog-fill" style="width:48%"></div></div>
+  </div>
+  <div class="sec-head"><div class="sec-num">2</div><div class="sec-title">Scenario: the misdirected email</div></div>
+  <div class="scenario">
+    <div class="scenario-label">Distribution — Friday afternoon</div>
+    A colleague sends a list of 30 members' policy details to the wrong external email address — an adviser at a completely different firm. They realise within minutes and call the recipient, who confirms they have deleted the email and not opened the attachment. Your colleague says: <em>"It's fine, they deleted it. No need to make a big deal of it."</em>
+  </div>
+  <div class="card">
+    <div class="card-title">How should this be classified — and what should happen?</div>
+    <div class="options" id="q2-opts">
+      <button class="opt" onclick="answer('q2',0,false)">It's an Operational Risk Incident — a process failure. Log it within 24 hours.</button>
+      <button class="opt" onclick="answer('q2',1,true)">It's an Information Security Incident — member personal information was disclosed to an unauthorised party. Log it in Drova within 24 hours; Risk &amp; Compliance will assess privacy and CPS 234 reportability.</button>
+      <button class="opt" onclick="answer('q2',2,false)">It's a Compliance Incident — a policy breach. Log it within 24 hours.</button>
+      <button class="opt" onclick="answer('q2',3,false)">Your colleague is right — the recipient deleted it, so there's no harm and nothing to log.</button>
+    </div>
+    <div class="feedback" id="q2-fb"><div class="fb-head" id="q2-fh"></div><div id="q2-ft"></div></div>
+  </div>
+  <div class="card">
+    <span class="badge badge-orange" style="margin-bottom:0.6rem;">Why this is serious</span>
+    <div class="card-body">Personal information about 30 members was sent to someone unauthorised. Whether or not they read it, the data left our control. That triggers an assessment under the Privacy Act (the OAIC requires assessment within 30 days for an eligible data breach), and potentially under APRA CPS 234 if it points to a material information security control weakness. A verbal assurance from the recipient is not evidence — and it is not the staff member's call to decide whether it needs to be reported. <strong>The framework decides. Your job is to raise it.</strong></div>
+  </div>
+  <div class="nav">
+    <button class="btn-outline" onclick="goTo('s-q1')">Back</button>
+    <button class="btn-primary" id="q2-next" onclick="goTo('s-q3')" disabled>Continue</button>
+  </div>
+</div>
+
+<!-- Q3 - WHAT TO DO FIRST -->
+<div id="s-q3" class="screen">
+  <div class="header-bar">
+    <div class="ki-logo">KeyInvest</div>
+    <div class="header-title">Section 3 of 4 — The first hour</div>
+    <div class="prog-wrap"><div class="prog-fill" style="width:65%"></div></div>
+  </div>
+  <div class="sec-head"><div class="sec-num">3</div><div class="sec-title">Scenario: the system outage</div></div>
+  <div class="scenario">
+    <div class="scenario-label">Member Services — Tuesday, 10:15am</div>
+    The system used to record member transactions has gone down. Members are calling and you cannot access their records. A colleague is suggesting everyone "just write it down on paper and we'll catch up when it comes back." Another is saying <em>"Let's wait an hour — it'll probably come back on its own."</em>
+  </div>
+  <div class="card">
+    <div class="card-title">What is the most important thing to do right now?</div>
+    <div class="options" id="q3-opts">
+      <button class="opt" onclick="answer('q3',0,false)">Follow the paper workaround — it keeps the business running and we can fix the records later.</button>
+      <button class="opt" onclick="answer('q3',1,false)">Wait an hour to see if it comes back — no point raising an alarm over a short outage.</button>
+      <button class="opt" onclick="answer('q3',2,true)">Escalate immediately to your manager and the technology team. This is a potential disruption to a critical operation — it must be logged in Drova as an Incident and assessed under CPS 230.</button>
+      <button class="opt" onclick="answer('q3',3,false)">Log it in Drova yourself and wait for instructions before doing anything else.</button>
+    </div>
+    <div class="feedback" id="q3-fb"><div class="fb-head" id="q3-fh"></div><div id="q3-ft"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">The first hour — what good looks like</div>
+    <ul class="kl">
+      <li><strong>Contain first.</strong> Stop the immediate harm if you safely can — disconnect, lock, pause, escalate.</li>
+      <li><strong>Tell your manager.</strong> Within minutes, not hours. If your manager is unreachable, go directly to Risk &amp; Compliance.</li>
+      <li><strong>Preserve evidence.</strong> Don't delete emails, files, or screenshots. The investigation needs them.</li>
+      <li><strong>Log it in Drova promptly and within required policy timeframes (typically within 24 hours of discovery).</strong> A formal record starts the framework, the clock, and the regulatory assessment.</li>
+      <li><strong>Don't decide if it's reportable.</strong> That decision is made through KeyInvest's Risk &amp; Compliance governance process, in line with the Incident Management Policy. Your job is to surface it.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <span class="badge badge-teal" style="margin-bottom:0.5rem;">Critical Operations and CPS 230</span>
+    <div class="card-body">Under APRA CPS 230, a disruption to a critical operation — for example, our ability to record member transactions or pay benefits — <strong>may require notification to APRA within 24 hours if tolerances are exceeded</strong>. That assessment cannot start until the Incident is escalated. Fast internal reporting is what protects KeyInvest's ability to meet that timeframe.</div>
+  </div>
+  <div class="nav">
+    <button class="btn-outline" onclick="goTo('s-q2')">Back</button>
+    <button class="btn-primary" id="q3-next" onclick="goTo('s-q4')" disabled>Continue</button>
+  </div>
+</div>
+
+<!-- Q4 - REGULATORY CLOCK -->
+<div id="s-q4" class="screen">
+  <div class="header-bar">
+    <div class="ki-logo">KeyInvest</div>
+    <div class="header-title">Section 4 of 4 — The regulatory clock</div>
+    <div class="prog-wrap"><div class="prog-fill" style="width:82%"></div></div>
+  </div>
+  <div class="sec-head"><div class="sec-num">4</div><div class="sec-title">Scenario: the weekend discovery</div></div>
+  <div class="scenario">
+    <div class="scenario-label">Any team member — Saturday morning</div>
+    You're checking your work email from home over the weekend and notice something concerning — a system access log showing unauthorised attempts to access member records overnight on Friday. You're not sure if anything was actually compromised. Your manager is on annual leave. A colleague suggests waiting until Monday <em>"because Risk &amp; Compliance aren't in on the weekend anyway."</em>
+  </div>
+  <div class="card">
+    <div class="card-title">What do you do?</div>
+    <div class="options" id="q4-opts">
+      <button class="opt" onclick="answer('q4',0,false)">Wait until Monday — it's the weekend and the right people aren't available.</button>
+      <button class="opt" onclick="answer('q4',1,false)">Email Risk &amp; Compliance with what you found and wait for them to respond Monday.</button>
+      <button class="opt" onclick="answer('q4',2,true)">Escalate immediately — phone Risk &amp; Compliance and the technology team. Don't wait for business hours. The 24-hour clock under CPS 234 is running, weekend or not.</button>
+      <button class="opt" onclick="answer('q4',3,false)">Try to investigate yourself first — confirm whether anything was actually accessed before raising it.</button>
+    </div>
+    <div class="feedback" id="q4-fb"><div class="fb-head" id="q4-fh"></div><div id="q4-ft"></div></div>
+  </div>
+  <div class="card orange-card">
+    <span class="badge badge-orange" style="margin-bottom:0.6rem;">Key regulatory notification deadlines</span>
+    <div class="timeline">
+      <div class="tl-row"><div class="tl-clock">24 hrs</div><div class="tl-body"><strong>APRA — CPS 230.</strong> Disruption to a critical operation outside tolerance.</div></div>
+      <div class="tl-row"><div class="tl-clock">24 hrs</div><div class="tl-body"><strong>AUSTRAC — SMR.</strong> Suspicious matter report where CTF-related (3 business days otherwise).</div></div>
+      <div class="tl-row"><div class="tl-clock">72 hrs</div><div class="tl-body"><strong>APRA — CPS 234.</strong> Material information security Incident.</div></div>
+      <div class="tl-row"><div class="tl-clock">10 days</div><div class="tl-body"><strong>APRA — CPS 220.</strong> Significant breach of, or material deviation from, the Risk Management Framework.</div></div>
+      <div class="tl-row"><div class="tl-clock">30 days</div><div class="tl-body"><strong>ASIC.</strong> Significant breach of a core obligation under the Corporations Act.</div></div>
+      <div class="tl-row"><div class="tl-clock">30 days</div><div class="tl-body"><strong>OAIC.</strong> Eligible data breach assessment must be completed; notification as soon as practicable thereafter.</div></div>
+    </div>
+    <hr class="div">
+    <div class="card-body"><strong>Every one of these clocks starts at discovery, not at the start of business hours.</strong> Your fast escalation is what protects KeyInvest's ability to meet these deadlines. Risk &amp; Compliance and the CRO have on-call processes for serious matters — use them.</div>
+    <div class="card-body" style="margin-top:0.6rem;font-size:12px;font-style:italic;">Indicative timeframes shown — Risk &amp; Compliance determines applicability for any specific Incident.</div>
+  </div>
+  <div class="nav">
+    <button class="btn-outline" onclick="goTo('s-q3')">Back</button>
+    <button class="btn-primary" id="q4-next" onclick="goTo('s-complete')" disabled>Finish module</button>
+  </div>
+</div>
+
+<!-- COMPLETE -->
+<div id="s-complete" class="screen">
+  <div class="header-bar">
+    <div class="ki-logo">KeyInvest</div>
+    <div class="header-title">Module complete</div>
+    <div class="prog-wrap"><div class="prog-fill" style="width:100%"></div></div>
+  </div>
+  <div class="score-ring"><div class="score-big" id="final-score">—</div><div class="score-sub">questions</div></div>
+  <div class="card" style="text-align:center;">
+    <div class="card-title" id="score-heading"></div>
+    <div class="card-body" id="score-message"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Your key takeaways</div>
+    <ul class="kl">
+      <li>An Incident is any unplanned event that disrupts — or could have disrupted — operations, security, or compliance. Near-misses count.</li>
+      <li>Three Incident Types: Information Security, Operational Risk, Compliance. Don't worry about getting it right — raise it, Line 2 will classify.</li>
+      <li>Log every Incident in Drova promptly and within required policy timeframes (typically within 24 hours of discovery). Escalate to your manager (or directly to Risk &amp; Compliance) as soon as practicable.</li>
+      <li>First hour: contain, tell your manager, preserve evidence, log it. Don't try to investigate alone, and don't decide reportability yourself.</li>
+      <li>Regulatory notification clocks start at discovery — not at the start of business hours. Escalate on weekends if you have to. Risk &amp; Compliance will determine the applicable obligations.</li>
+      <li><strong>Incidents often lead to Issues.</strong> Where remediation is required, the action is tracked through the Issue Management Framework — covered in Module 3.</li>
+    </ul>
+  </div>
+
+  <!-- COMPLETION DECLARATION -->
+  <div class="completion-form" id="decl-form">
+    <h3>Completion declaration</h3>
+    <div class="form-row">
+      <label>Full name</label>
+      <input type="text" id="decl-name" placeholder="Your full name" />
+    </div>
+    <div class="form-row">
+      <label>Team / role</label>
+      <input type="text" id="decl-role" placeholder="e.g. Operations, Member Services, Distribution" />
+    </div>
+    <div class="check-row-consent">
+      <input type="checkbox" id="decl-consent" />
+      <span>I confirm I have completed this module and understand my obligations under KeyInvest's Incident Management Policy and APRA CPS 220, 230 and 234.</span>
+    </div>
+    <button class="btn-submit" id="decl-btn" onclick="submitDeclaration()" disabled>Record my completion</button>
+  </div>
+
+  <div class="completion-confirmed" id="decl-confirmed">
+    <h3>✓ Completion recorded</h3>
+    <p id="decl-summary"></p>
+    <p style="margin-top:0.5rem;">Your reference code: <span class="ref-code" id="decl-ref"></span></p>
+    <p style="margin-top:0.5rem;font-size:12px;color:#085041;">Screenshot or print this page for your records. This information is also submitted to the KeyInvest training register for APRA reporting.</p>
+  </div>
+
+  <div class="nav" style="justify-content:center;gap:0.75rem;">
+    <button class="btn-outline" onclick="restart()">Restart module</button>
+    <a href="../../index.html" class="btn-outline" style="text-decoration:none;display:inline-block;">Return to portal</a>
+  </div>
+</div>
+
+</div><!-- .wrap -->
+<script>
+/* ============================================================
+   SCORM 1.2 API WRAPPER
+   ============================================================ */
+var SCORM = (function(){
+  var api = null, found = false, initialized = false, finished = false;
+  function findAPI(win){
+    var n = 0;
+    while (win && !win.API && win.parent && win.parent !== win && n++ < 10) win = win.parent;
+    return win ? win.API : null;
+  }
+  function getAPI(){
+    if (found) return api;
+    var a = findAPI(window);
+    if (!a && window.opener) a = findAPI(window.opener);
+    api = a; found = true;
+    return api;
+  }
+  function init(){
+    var a = getAPI();
+    if (!a || initialized) return !!a;
+    var r = a.LMSInitialize("");
+    initialized = (r === "true" || r === true);
+    return initialized;
+  }
+  function set(k, v){
+    var a = getAPI(); if (!a || !initialized) return false;
+    var r = a.LMSSetValue(k, String(v));
+    return (r === "true" || r === true);
+  }
+  function get(k){
+    var a = getAPI(); if (!a || !initialized) return "";
+    return a.LMSGetValue(k) || "";
+  }
+  function commit(){
+    var a = getAPI(); if (!a || !initialized) return false;
+    return a.LMSCommit("") === "true" || a.LMSCommit("") === true;
+  }
+  function finish(){
+    var a = getAPI(); if (!a || !initialized || finished) return;
+    a.LMSCommit("");
+    a.LMSFinish("");
+    finished = true;
+  }
+  return {
+    init: init, set: set, get: get, commit: commit, finish: finish,
+    isConnected: function(){ return !!getAPI(); }
+  };
+})();
+
+window.addEventListener('load', function(){
+  if (SCORM.init()) {
+    var status = SCORM.get('cmi.core.lesson_status');
+    if (!status || status === 'not attempted' || status === 'unknown') {
+      SCORM.set('cmi.core.lesson_status', 'incomplete');
+    }
+    SCORM.set('cmi.core.score.min', '0');
+    SCORM.set('cmi.core.score.max', '4');
+    SCORM.commit();
+  }
+});
+
+window.addEventListener('beforeunload', function(){ SCORM.finish(); });
+window.addEventListener('pagehide', function(){ SCORM.finish(); });
+
+var scores={q1:null,q2:null,q3:null,q4:null};
+var fb={
+  q1:{c:{h:'Correct.',t:'A near-miss is still an Incident under our policy — an unplanned event with the potential to disrupt. The fact that the control caught it is good news, but it does not change the classification. Logging it lets Risk & Compliance investigate the upstream cause — why did the wrong figure reach the file in the first place? That is the real risk worth understanding.'},w:{h:'Not quite.',t:'"No harm done" is the most dangerous phrase in incident management. The control worked this time — but the upstream process failed, and if we never log it we never investigate why. KeyInvest\'s Incident Management Policy explicitly covers events where there was potential to disrupt, not just events that did. Near-misses must be logged in Drova promptly and within required policy timeframes (typically within 24 hours), the same as any other Incident.'}},
+  q2:{c:{h:'Correct.',t:'This is an Information Security Incident — personal information was disclosed to an unauthorised recipient, regardless of what they did with it afterwards. Reportability is then assessed against the Privacy Act (eligible data breach) and CPS 234 (material information security control weakness). The recipient\'s verbal assurance that they deleted it is not evidence and not within our control. Raise it; let the framework do its job.'},w:{h:'Not quite.',t:'The most important detail here is the information that left our control — personal data of 30 members went to an unauthorised party. That makes it an Information Security Incident, not just an operational error. And the recipient\'s say-so isn\'t evidence the data is contained. Even more importantly, "no harm done, don\'t make a big deal" is exactly the response that turns a small Incident into a regulatory finding. Log it promptly, within required policy timeframes.'}},
+  q3:{c:{h:'Correct.',t:'A system outage affecting member transactions is a potential disruption to a critical operation. Under CPS 230, that may require notification to APRA within 24 hours if tolerances are exceeded — and that assessment cannot start without immediate internal escalation. Paper workarounds may be appropriate (if business continuity procedures allow it) but they don\'t replace the requirement to escalate and log. Waiting and hoping is the worst option of the four.'},w:{h:'Not quite.',t:'A system outage that prevents member transactions is potentially a disruption to a critical operation under CPS 230. Waiting an hour, working around it informally, or logging it without escalating all miss the point: this needs eyes on it without delay — the technology team needs to assess, and Risk & Compliance needs to consider regulatory obligations. Your role is to escalate fast and let the framework respond.'}},
+  q4:{c:{h:'Correct.',t:'Regulatory notification timeframes — including CPS 234 (information security) and CPS 230 (critical operations) — do not pause for weekends. KeyInvest has on-call processes for exactly this reason. Phone, don\'t email. Don\'t try to investigate alone — you may inadvertently compromise evidence. Your job is to surface it fast. The technology team and Risk & Compliance will take it from there.'},w:{h:'Not quite.',t:'Regulatory notification clocks start at discovery, not at the start of business hours on Monday. Waiting until Monday risks putting KeyInvest outside its regulatory timeframes before anyone has even started the assessment. Emailing and waiting has the same problem. Trying to investigate yourself risks compromising evidence and is not your role. The right answer is to phone — not email — Risk & Compliance and the technology team on the on-call number.'}}
+};
+function answer(q,idx,correct){
+  var opts=document.getElementById(q+'-opts').getElementsByTagName('button');
+  for(var i=0;i<opts.length;i++)opts[i].disabled=true;
+  opts[idx].className='opt '+(correct?'correct':'wrong');
+  if(!correct){for(var j=0;j<opts.length;j++){if(opts[j].onclick&&opts[j].onclick.toString().indexOf('true')>-1)opts[j].className='opt correct';}}
+  scores[q]=correct?1:0;
+  var f=document.getElementById(q+'-fb');
+  var d=correct?fb[q].c:fb[q].w;
+  f.className='feedback show '+(correct?'fb-correct':'fb-wrong');
+  document.getElementById(q+'-fh').textContent=d.h;
+  document.getElementById(q+'-ft').textContent=d.t;
+  var nx=document.getElementById(q+'-next');if(nx)nx.disabled=false;
+}
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='s-complete')renderScore();
+}
+function renderScore(){
+  var total=(scores.q1||0)+(scores.q2||0)+(scores.q3||0)+(scores.q4||0);
+  document.getElementById('final-score').textContent=total+'/4';
+  var h=document.getElementById('score-heading'),m=document.getElementById('score-message');
+  if(total===4){h.textContent='Excellent — full marks.';m.textContent='You understand what counts as an Incident, the reporting clock, and the regulatory consequences. This is what APRA expects every staff member to know.';}
+  else if(total>=2){h.textContent='Good — review the scenarios you missed.';m.textContent='You have a working understanding. The scenarios you missed are the ones where the wrong instinct costs us the most — re-read the feedback carefully.';}
+  else{h.textContent='Please review this module again.';m.textContent='Incident recognition is the foundation of our regulatory compliance. Please re-read the feedback and speak with your team leader or Risk & Compliance before retaking.';}
+}
+document.getElementById('decl-consent').addEventListener('change',function(){
+  document.getElementById('decl-btn').disabled=!this.checked;
+});
+function submitDeclaration(){
+  var name=document.getElementById('decl-name').value.trim();
+  var role=document.getElementById('decl-role').value.trim();
+  if(!name){alert('Please enter your full name.');return;}
+  var now=new Date();
+  var ds=now.toLocaleDateString('en-AU',{day:'2-digit',month:'long',year:'numeric'});
+  var ts=now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  var score=(scores.q1||0)+(scores.q2||0)+(scores.q3||0)+(scores.q4||0);
+  var ref='KI-RMF2-'+now.getFullYear()+('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2)+'-'+Math.random().toString(36).substr(2,5).toUpperCase();
+  document.getElementById('decl-form').style.display='none';
+  var conf=document.getElementById('decl-confirmed');
+  conf.style.display='block';
+  document.getElementById('decl-summary').textContent=name+(role?' ('+role+')':'')+' completed the KeyInvest Module 2: Recognising and Reporting Incidents module on '+ds+' at '+ts+', scoring '+score+'/4.';
+  document.getElementById('decl-ref').textContent=ref;
+
+  if (SCORM.isConnected() && SCORM.init()) {
+    SCORM.set('cmi.core.score.raw', String(score));
+    SCORM.set('cmi.core.score.min', '0');
+    SCORM.set('cmi.core.score.max', '4');
+    SCORM.set('cmi.core.lesson_status', score >= 3 ? 'passed' : 'failed');
+    SCORM.set('cmi.suspend_data', 'ref='+ref+';name='+name+';role='+role+';score='+score+'/4');
+    SCORM.commit();
+    SCORM.finish();
+  }
+}
+function restart(){
+  scores={q1:null,q2:null,q3:null,q4:null};
+  ['q1','q2','q3','q4'].forEach(function(q){
+    var opts=document.getElementById(q+'-opts').getElementsByTagName('button');
+    for(var i=0;i<opts.length;i++){opts[i].className='opt';opts[i].disabled=false;}
+    document.getElementById(q+'-fb').className='feedback';
+    var nx=document.getElementById(q+'-next');if(nx)nx.disabled=true;
+  });
+  document.getElementById('decl-name').value='';
+  document.getElementById('decl-role').value='';
+  document.getElementById('decl-consent').checked=false;
+  document.getElementById('decl-btn').disabled=true;
+  document.getElementById('decl-form').style.display='block';
+  document.getElementById('decl-confirmed').style.display='none';
+  goTo('s-intro');
+}
+</script>
+</body>
+</html>

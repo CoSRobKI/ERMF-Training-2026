@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KeyInvest — Risk Learning Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f4f6f9; min-height: 100vh; padding: 1.5rem 1rem 3rem; color: #1a1a1a; }
+  :root {
+    --teal: #009B9E; --navy: #1B2A4A; --orange: #D4622B;
+    --teal-light: #E1F5EE; --navy-light: #e8ecf4;
+    --border: #dde1e8; --bg: #fff; --surface: #f4f6f9;
+    --text: #1a1a1a; --muted: #5c6270;
+    --radius: 10px; --radius-sm: 7px;
+  }
+  .wrap { max-width: 840px; margin: 0 auto; }
+
+  /* HERO */
+  .hero { background: var(--navy); border-radius: var(--radius); padding: 2.5rem 2rem; color: #fff; margin-bottom: 1.5rem; }
+  .ki-logo { font-size: 15px; font-weight: 600; color: var(--teal); margin-bottom: 0.4rem; letter-spacing: -0.3px; }
+  .hero h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 0.6rem; letter-spacing: -0.5px; }
+  .hero p { font-size: 15px; color: rgba(255,255,255,0.78); line-height: 1.65; max-width: 620px; }
+  .hero-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.25rem; }
+  .hero-tag { background: rgba(255,255,255,0.13); color: rgba(255,255,255,0.9); font-size: 12px; padding: 5px 12px; border-radius: 99px; }
+
+  /* SECTION HEADERS */
+  .section-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin: 2rem 0 0.75rem; }
+
+  /* INFO CARD (welcome + what to expect) */
+  .info-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; }
+  .info-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 0.6rem; }
+  .info-body { font-size: 14px; color: var(--muted); line-height: 1.7; }
+  .info-body strong { color: var(--text); }
+
+  /* MODULE GRID */
+  .modules { display: grid; grid-template-columns: 1fr; gap: 0.9rem; }
+  @media (min-width: 720px) { .modules { grid-template-columns: 1fr 1fr; } }
+
+  .module-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem 1.5rem; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s; position: relative; }
+  .module-card:hover { border-color: var(--teal); transform: translateY(-2px); box-shadow: 0 8px 24px -12px rgba(27,42,74,0.12); }
+  .module-card.placeholder { cursor: default; }
+  .module-card.placeholder:hover { transform: none; box-shadow: none; border-color: var(--border); }
+
+  .mod-num { font-family: monospace; font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+  .mod-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; line-height: 1.3; }
+  .mod-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex-grow: 1; }
+  .mod-footer { display: flex; align-items: center; gap: 0.6rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; letter-spacing: 0.02em; }
+  .badge-ready { background: #eaf3de; color: #3b6d11; }
+  .badge-soon { background: #fbeee8; color: var(--orange); }
+  .badge-time { background: var(--navy-light); color: var(--navy); }
+  .badge-cps { background: var(--teal-light); color: var(--navy); }
+
+  .arrow { margin-left: auto; font-size: 18px; color: var(--teal); font-weight: 700; }
+  .placeholder .arrow { color: var(--muted); opacity: 0.4; }
+
+  /* LEARNING PATHWAY VISUAL */
+  .pathway { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem 1.5rem; margin-bottom: 1rem; }
+  .pathway-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 0.9rem; }
+  .pathway-steps { display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: wrap; }
+  .pathway-step { flex: 1; min-width: 150px; background: var(--surface); border-radius: var(--radius-sm); padding: 0.75rem 0.9rem; position: relative; }
+  .ps-num { font-family: monospace; font-size: 10px; font-weight: 700; color: var(--teal); letter-spacing: 0.1em; }
+  .ps-title { font-size: 13px; font-weight: 600; color: var(--text); margin: 0.3rem 0 0.25rem; }
+  .ps-desc { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+  /* POLICY ANCHORS */
+  .policies { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.6rem; }
+  .pol-row { display: flex; align-items: flex-start; gap: 0.7rem; font-size: 13px; color: var(--muted); line-height: 1.55; padding: 0.5rem 0.75rem; background: var(--surface); border-radius: var(--radius-sm); border-left: 3px solid var(--teal); }
+  .pol-row strong { color: var(--text); display: block; margin-bottom: 1px; }
+
+  /* FOOTER */
+  .footer { margin-top: 2.5rem; padding: 1.25rem 0 0; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); text-align: center; line-height: 1.7; }
+  .footer strong { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="ki-logo">KeyInvest</div>
+    <h1>Risk Learning Portal</h1>
+    <p>A short series of online modules that help every staff member understand how KeyInvest manages risk, how to recognise and report Incidents, and how to raise Issues — anchored to our Enterprise-wide Risk Management Framework and APRA CPS 220, 230 and 234.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">All staff</span>
+      <span class="hero-tag">~30 minutes total</span>
+      <span class="hero-tag">CPS 220 / 230 / 234</span>
+      <span class="hero-tag">Evidence captured</span>
+    </div>
+  </div>
+
+  <!-- WELCOME / WHAT TO EXPECT -->
+  <div class="info-card">
+    <div class="info-title">Welcome — what to expect</div>
+    <div class="info-body">Each module takes around 10 minutes and follows the same pattern: a short concept section, four realistic KeyInvest scenarios with feedback, and a completion declaration that is recorded for APRA reporting purposes. You can complete the modules in any order, but we recommend working through them in sequence — each builds on the one before. <strong>Your completion is recorded automatically.</strong></div>
+  </div>
+
+  <!-- LEARNING PATHWAY -->
+  <div class="pathway">
+    <div class="pathway-title">The learning pathway</div>
+    <div class="pathway-steps">
+      <div class="pathway-step">
+        <div class="ps-num">M1</div>
+        <div class="ps-title">Understand</div>
+        <div class="ps-desc">What risk is, who owns it, and the boundaries we operate within.</div>
+      </div>
+      <div class="pathway-step">
+        <div class="ps-num">M2</div>
+        <div class="ps-title">Respond</div>
+        <div class="ps-desc">How to recognise an Incident and what to do in the first 24 hours.</div>
+      </div>
+      <div class="pathway-step">
+        <div class="ps-num">M3</div>
+        <div class="ps-title">Remediate</div>
+        <div class="ps-desc">How to raise an Issue and work it through the remediation lifecycle.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE LIST -->
+  <div class="section-label">The modules</div>
+  <div class="modules">
+
+    <a href="modules/module1-understanding-risk/index.html" class="module-card">
+      <div class="mod-num">MODULE 01</div>
+      <div class="mod-title">Understanding Risk at KeyInvest</div>
+      <div class="mod-desc">What risk means at KeyInvest, the three material risk categories, risk appetite, the Three Lines of Defence, and your role within them.</div>
+      <div class="mod-footer">
+        <span class="badge badge-ready">Available</span>
+        <span class="badge badge-time">~10 min</span>
+        <span class="badge badge-cps">CPS 220</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <a href="modules/module2-incident-management/index.html" class="module-card">
+      <div class="mod-num">MODULE 02</div>
+      <div class="mod-title">Recognising and Reporting Incidents</div>
+      <div class="mod-desc">What counts as an Incident, the three Incident Types, the reporting clock, what to do in the first hour, and how the regulatory clock works.</div>
+      <div class="mod-footer">
+        <span class="badge badge-ready">Available</span>
+        <span class="badge badge-time">~10 min</span>
+        <span class="badge badge-cps">CPS 230 / 234</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <a href="modules/module3-issue-management/index.html" class="module-card placeholder">
+      <div class="mod-num">MODULE 03</div>
+      <div class="mod-title">Identifying and Raising Issues</div>
+      <div class="mod-desc">How to recognise a control weakness or gap, raise it in Drova, and work it through the remediation lifecycle — including verification and risk acceptance.</div>
+      <div class="mod-footer">
+        <span class="badge badge-soon">In development</span>
+        <span class="badge badge-time">~10 min</span>
+        <span class="badge badge-cps">CPS 220 / 230 / 234</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- POLICY ANCHORS -->
+  <div class="section-label">Policy anchors</div>
+  <div class="info-card">
+    <div class="info-body">These modules are built directly on, and evidence understanding of, the following KeyInvest documents — all available on the KeyInvest Policy SharePoint site:</div>
+    <div class="policies">
+      <div class="pol-row"><div><strong>Enterprise-wide Risk Management Strategy (ERMS)</strong>Board-approved June 2025 — the lead document of the KeyInvest Risk Management Framework.</div></div>
+      <div class="pol-row"><div><strong>Incident Management Policy &amp; Procedure</strong>How Incidents are identified, reported, escalated and managed.</div></div>
+      <div class="pol-row"><div><strong>Issue Management Policy &amp; Procedure</strong>How control weaknesses and gaps are raised, remediated and verified.</div></div>
+      <div class="pol-row"><div><strong>Risk Appetite Statement (RAS)</strong>The Board-approved boundary within which KeyInvest operates.</div></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <strong>KeyInvest Risk Learning Portal</strong> · Maintained by Risk &amp; Compliance · For technical support contact the L&amp;D team<br>
+    Completion records are submitted to the KeyInvest training register for APRA reporting purposes.
+  </div>
+
+</div>
+</body>
+</html>
